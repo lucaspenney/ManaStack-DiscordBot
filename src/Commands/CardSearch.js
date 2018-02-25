@@ -1,65 +1,86 @@
-"use strict";
-
 const fetch = require("node-fetch");
 const Discord = require("discord.js");
 const manastack = require("./../../config/manastack.json");
 
-class CardSearch
-{
-    constructor(message)
-    {
-        this.handle(message);
-    }
+class CardSearch {
 
-    handle(message)
-    {
-        // create the RichEmbed box
-        let cardName = message.content.substring(message.content.indexOf(" ")).trim();
+	handle(message) {
+		let search = message.content.substring(message.content.indexOf(" ")).split(" --");
+		let flags = this.checkFlags(search);
+		this.getResult(search[0].trim(), message, flags);
+	}
 
-        fetch(manastack.api.cardSearch.single + cardName + "&limit=5")
-            .then(res => res.json())
-            .then(json => {
+	checkFlags(search) {
+		let flags = {
+			"set": "",
+			"text": "",
+			"type": ""
+		};
 
-                var cardSearch = new Discord.RichEmbed();
-                var otherResults = [];
+		for (var i = 1; i < search.length; i++) {
+			var flag = search[i].split(" ");
 
-                if(json.length > 0)
-                {
-                    // TODO: Fix 'null' displayed for mana cost on lands
-                    cardSearch.setTitle(json[0].name + " " + json[0].mana_cost);
-                    cardSearch.setColor("BLUE");
-                    cardSearch.setThumbnail(encodeURI(manastack.api.images + json[0].set.slug + "/" + json[0].image + ".jpg"));
-                    cardSearch.setImage(encodeURI(manastack.api.images + json[0].set.slug + "/" + json[0].image + ".jpg"));
-                    cardSearch.setDescription("***Set:** " + json[0].set.name + "\n\n" + json[0].text + "*");
+			flag = flag[0].trim();
+			var searchText = search[i].substring(search[i].indexOf(" ", 1)).trim();
 
-                    if (json.length > 1) {
+			if (["s", "set", "sets"].includes(flag)) {
+				flags["set"] = searchText;
+			}
 
-                        for (var i = 1; i < json.length; i++) {
-                            otherResults[i] = json[i].name;
-                        }
+			if (["t", "text"].includes(flag)) {
+				flags["text"] = searchText;
+			}
 
-                        cardSearch.addField("Other Results", otherResults);
-                    }
+			if (["ty", "type"].includes(flag)) {
+				flags["type"] = searchText;
+			}
+		}
+		return flags;
+	}
 
-                    cardSearch.addBlankField();
-                    cardSearch.setFooter("Low: $" + json[0].price.low + " Med: $" +  json[0].price.med + " High: $" + json[0].price.high);
+	getResult(cardName, message, flags) {
+		console.log(flags);
+		fetch(manastack.api.cardSearch.single + cardName + "&sets=" + flags["set"] + "&text=" + flags["text"] + "&type=" + flags["type"] + "&limit=5")
+			.then(res => res.json())
+			.then(json => {
 
-                    this.respond(message, cardSearch);
-                } else {
+				var cardSearch = new Discord.RichEmbed();
+				var otherResults = [];
 
-                    cardSearch.setTitle("Card Not Found");
-                    cardSearch.setDescription("Query: " + cardName);
-                    this.respond(message, cardSearch);
-                }
+				if (json.length > 0) {
+					// TODO: Fix 'null' displayed for mana cost on lands
+					cardSearch.setTitle(json[0].name + " " + json[0].mana_cost);
+					cardSearch.setColor("BLUE");
+					cardSearch.setImage(encodeURI(manastack.api.images + json[0].set.slug + "/" + json[0].image + ".jpg"));
+					cardSearch.setDescription(json[0].type + "\n" + json[0].set.name + "\n\n" + json[0].text);
 
-           }).catch(err => console.error(err));
-    }
+					if (json.length > 1) {
 
-    respond(message, response)
-    {
-        // respond with the RichEmbed box.
-        message.channel.send(response);
-    }
+						for (var i = 1; i < json.length; i++) {
+							otherResults[i] = "**" + json[i].name + "** (_" + json[i].set.name + "_)";
+						}
+
+						cardSearch.addField("Other Results", otherResults);
+					}
+
+					cardSearch.addBlankField();
+					cardSearch.setFooter("Low: $" + json[0].price.low + " Med: $" + json[0].price.med + " High: $" + json[0].price.high);
+
+					this.respond(message, cardSearch);
+				} else {
+					cardSearch.setTitle("Card Not Found");
+					cardSearch.setDescription("Query: " + cardName);
+
+					this.respond(message, cardSearch);
+				}
+
+			}).catch(err => console.error(err));
+	}
+
+	respond(message, response) {
+		// respond with the RichEmbed box.
+		message.channel.send(response);
+	}
 }
 
 module.exports = CardSearch;
