@@ -50,7 +50,7 @@ class CardSearch extends Command
 
 	getResult(cardName, message, flags)
 	{
-		fetch(manastack.api.cardSearch.single + cardName + "&sets=" + flags["set"] + "&text=" + flags["text"] + "&type=" + flags["type"] + "&limit=5&distinct=name")
+		fetch(manastack.api.cardSearch + "?name=" + cardName + "&sets=" + flags["set"] + "&text=" + flags["text"] + "&type=" + flags["type"] + "&limit=5&distinct=name")
 			.then(res => res.json())
 			.then(json => {
 
@@ -61,7 +61,7 @@ class CardSearch extends Command
 					let card = json[0];
 					cardSearch.setTitle(card.name);
 					cardSearch.setColor("BLUE");
-					cardSearch.setImage(encodeURI(manastack.api.images + card.set.slug + "/" + card.image + ".jpg"));
+					cardSearch.setImage(encodeURI(manastack.images + card.set.slug + "/" + card.image + ".jpg"));
 					cardSearch.setDescription(card.type + "\n" + card.set.name + "\n\n" + card.text);
 
 					if (json.length > 1) {
@@ -71,8 +71,9 @@ class CardSearch extends Command
 						cardSearch.addField("Other Results", otherResults);
 					}
 
-					cardSearch.addBlankField();
-					cardSearch.setFooter("Low: $" + card.price.low + " Med: $" + card.price.med + " High: $" + card.price.high);
+					let tcgplayer = (card.price.tcgplayer) ? card.price.tcgplayer.toFixed(2) : "?.??";
+					let cardkingdom = (card.price.cardkingdom) ? card.price.cardkingdom.toFixed(2) : "?.??";
+					cardSearch.setFooter("TCGPlayer: $" + tcgplayer + " CardKingdom: $" + cardkingdom);
 
 					this.respond(message, cardSearch);
 				} else {

@@ -8,6 +8,7 @@ const Discord = require("discord.js");
 // Classessc
 const CommandHandler = require("./src/Handlers/CommandHandler.js");
 const TwitterFeed = require("./src/Feeds/Twitter");
+const StatusFeed = require("./src/Feeds/Status");
 
 class Bot {
 
@@ -24,11 +25,11 @@ class Bot {
 			console.log("I am ready!");
 			this.client.user.setActivity("!h or !help");
 
-			//this.TwitterFeed = new TwitterFeed(this.client);
+			this.statusFeed = new StatusFeed(this.client);
 
-			// setInterval(() => {
-			// 	this.TwitterFeed.checkTwitter();
-			// }, ManaStack.api.social.twitter.updateInterval);	
+			setInterval(() => {
+				this.statusFeed.check()
+			}, 60 * 5 * 1000);	
 
 		});
 	}

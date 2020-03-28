@@ -13,6 +13,9 @@ class Help {
 		let keys = Object.keys(commandList);
 		let result = "";
 		keys.forEach((key) => {
+			if (commandList[key].hidden) {
+				return;
+			}
 			var line = "";
 			var prefixes = key.split("|");
 			prefixes.forEach((p, i) => {

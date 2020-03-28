@@ -25,9 +25,9 @@ class CommandManager {
 			},
 			"w|welcome": {
 				"command": Welcome,
-				"description": "Sends a Welcome"
+				"description": "Sends a Welcome",
+				"hidden": true,
 			},
-			
 		};
 	}
 }
